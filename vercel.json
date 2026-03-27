@@ -6,19 +6,8 @@
   "installCommand": "npm ci --legacy-peer-deps",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://www.reddit.com/:path*"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/:path*",
-      "headers": [
-        {
-          "key": "User-Agent",
-          "value": "RedditAudioWeb/1.0"
-        }
-      ]
+      "source": "/api/r/:path*",
+      "destination": "/api/reddit?path=/r/:path*"
     }
   ]
 }

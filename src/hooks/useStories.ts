@@ -13,15 +13,14 @@ export function useStories() {
     limit: number = 5,
     category: Category = 'hot',
     timeFilter: TimeFilter = 'all',
-    append: boolean = false,
-    translate: boolean = true
+    append: boolean = false
   ) => {
     console.log('Loading stories for:', subreddit);
     setLoading(true);
     setError(null);
 
     try {
-      const newStories = await redditService.fetchStories(subreddit, limit, category, timeFilter, translate);
+      const newStories = await redditService.fetchStories(subreddit, limit, category, timeFilter);
       console.log('Loaded stories:', newStories.length);
       
       if (append) {
@@ -43,12 +42,11 @@ export function useStories() {
     subreddit: string,
     limit: number = 5,
     category: Category = 'hot',
-    timeFilter: TimeFilter = 'all',
-    translate: boolean = true
+    timeFilter: TimeFilter = 'all'
   ) => {
     if (loading || !hasMore) return;
     
-    await loadStories(subreddit, limit, category, timeFilter, true, translate);
+    await loadStories(subreddit, limit, category, timeFilter, true);
   }, [loading, hasMore, loadStories]);
 
   const clearStories = useCallback(() => {

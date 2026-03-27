@@ -124,8 +124,7 @@ export class RedditService {
     subreddit: string,
     limit: number = 5,
     category: Category = 'hot',
-    timeFilter: TimeFilter = 'all',
-    _translate: boolean = true
+    timeFilter: TimeFilter = 'all'
   ): Promise<Story[]> {
     console.log('fetchStories called with:', subreddit, limit);
     const posts = await this.fetchSubredditPosts(subreddit, limit * 3, category, timeFilter);

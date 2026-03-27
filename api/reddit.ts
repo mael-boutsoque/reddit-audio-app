@@ -19,7 +19,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const redditUrl = `https://www.reddit.com${path}`;
+    // Ensure path ends with .json
+    let redditPath = path;
+    if (!redditPath.endsWith('.json')) {
+      redditPath = `${redditPath}.json`;
+    }
+    
+    const redditUrl = `https://www.reddit.com${redditPath}`;
     const url = new URL(redditUrl);
     
     // Copy query params from request
@@ -31,8 +37,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const response = await fetch(url.toString(), {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Referer': 'https://www.reddit.com/',
+        'Connection': 'keep-alive',
       },
     });
 

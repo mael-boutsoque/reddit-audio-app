@@ -16,20 +16,20 @@ function AppContent() {
   // Load stories when settings are ready
   useEffect(() => {
     if (settings && stories.length === 0 && !storiesLoading) {
-      loadStories(settings.subreddit, settings.storiesPerLoad, 'hot', 'all', false, settings.translate ?? true);
+      loadStories(settings.subreddit, settings.storiesPerLoad, 'hot', 'all', false);
     }
   }, [settings, stories.length, storiesLoading, loadStories]);
 
   const handleLoadStories = useCallback(() => {
     if (settings) {
       clearStories();
-      loadStories(settings.subreddit, settings.storiesPerLoad, 'hot', 'all', false, settings.translate ?? true);
+      loadStories(settings.subreddit, settings.storiesPerLoad, 'hot', 'all', false);
     }
   }, [settings, clearStories, loadStories]);
 
   const handleLoadMore = useCallback(() => {
     if (settings) {
-      loadMore(settings.subreddit, settings.storiesPerLoad, 'hot', 'all', settings.translate ?? true);
+      loadMore(settings.subreddit, settings.storiesPerLoad, 'hot', 'all');
     }
   }, [settings, loadMore]);
 

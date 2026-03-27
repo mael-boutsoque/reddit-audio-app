@@ -13,13 +13,8 @@ export function SettingsScreen({
   onSaveSettings,
   onBack,
 }: SettingsScreenProps) {
-  const [localSettings, setLocalSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [localSettings, setLocalSettings] = useState<Settings>(settings ?? DEFAULT_SETTINGS);
 
-  useEffect(() => {
-    if (settings) {
-      setLocalSettings(settings);
-    }
-  }, [settings]);
 
   const handleSave = () => {
     onSaveSettings(localSettings);

@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redditPath = `${redditPath}.json`;
     }
     
-    const redditUrl = `https://www.reddit.com${redditPath}`;
+    const redditUrl = `https://old.reddit.com${redditPath}`;
     const url = new URL(redditUrl);
     
     Object.entries(req.query).forEach(([key, value]) => {

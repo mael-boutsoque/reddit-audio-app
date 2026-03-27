@@ -1,50 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Reddit OAuth credentials - these should be set in Vercel env vars
-const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID || '';
-const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET || '';
+// Simple Reddit proxy using public JSON API with rotation
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+];
 
-let accessToken: string | null = null;
-let tokenExpiry: number = 0;
+function getRandomUserAgent(): string {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
 
-async function getRedditToken(): Promise<string | null> {
-  // Return cached token if still valid
-  if (accessToken && Date.now() < tokenExpiry) {
-    return accessToken;
+function toBase64(str: string): string {
+  // Simple base64 encoding without Buffer
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let result = '';
+  let i = 0;
+  while (i < str.length) {
+    const a = str.charCodeAt(i++);
+    const b = i < str.length ? str.charCodeAt(i++) : 0;
+    const c = i < str.length ? str.charCodeAt(i++) : 0;
+    const bitmap = (a << 16) | (b << 8) | c;
+    result += chars.charAt((bitmap >> 18) & 63);
+    result += chars.charAt((bitmap >> 12) & 63);
+    result += i > str.length + 1 ? '=' : chars.charAt((bitmap >> 6) & 63);
+    result += i > str.length ? '=' : chars.charAt(bitmap & 63);
   }
-
-  if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET) {
-    console.error('Missing Reddit OAuth credentials');
-    return null;
-  }
-
-  try {
-    const auth = Buffer.from(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`).toString('base64');
-    
-    const response = await fetch('https://www.reddit.com/api/v1/access_token', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'RedditAudioApp/1.0',
-      },
-      body: 'grant_type=client_credentials',
-    });
-
-    if (!response.ok) {
-      console.error('Failed to get Reddit token:', response.status);
-      return null;
-    }
-
-    const data = await response.json() as { access_token: string; expires_in: number };
-    accessToken = data.access_token;
-    tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000;
-    
-    return accessToken;
-  } catch (error) {
-    console.error('Error getting Reddit token:', error);
-    return null;
-  }
+  return result;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -64,22 +46,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const token = await getRedditToken();
-  
-  if (!token) {
-    res.status(500).json({ 
-      error: 'Reddit API authentication failed. Please set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET environment variables.' 
-    });
-    return;
-  }
-
   try {
     let redditPath = path;
     if (!redditPath.endsWith('.json')) {
       redditPath = `${redditPath}.json`;
     }
     
-    const redditUrl = `https://oauth.reddit.com${redditPath}`;
+    const redditUrl = `https://www.reddit.com${redditPath}`;
     const url = new URL(redditUrl);
     
     Object.entries(req.query).forEach(([key, value]) => {
@@ -88,11 +61,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
+    const userAgent = getRandomUserAgent();
+    
     const response = await fetch(url.toString(), {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'User-Agent': 'RedditAudioApp/1.0',
-        'Accept': 'application/json',
+        'User-Agent': userAgent,
+        'Accept': 'application/json, text/html, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Cache-Control': 'max-age=0',
       },
     });
 

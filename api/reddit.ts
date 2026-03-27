@@ -1,7 +1,53 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+// Reddit OAuth credentials - these should be set in Vercel env vars
+const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID || '';
+const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET || '';
+
+let accessToken: string | null = null;
+let tokenExpiry: number = 0;
+
+async function getRedditToken(): Promise<string | null> {
+  // Return cached token if still valid
+  if (accessToken && Date.now() < tokenExpiry) {
+    return accessToken;
+  }
+
+  if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET) {
+    console.error('Missing Reddit OAuth credentials');
+    return null;
+  }
+
+  try {
+    const auth = Buffer.from(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`).toString('base64');
+    
+    const response = await fetch('https://www.reddit.com/api/v1/access_token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'RedditAudioApp/1.0',
+      },
+      body: 'grant_type=client_credentials',
+    });
+
+    if (!response.ok) {
+      console.error('Failed to get Reddit token:', response.status);
+      return null;
+    }
+
+    const data = await response.json() as { access_token: string; expires_in: number };
+    accessToken = data.access_token;
+    tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000;
+    
+    return accessToken;
+  } catch (error) {
+    console.error('Error getting Reddit token:', error);
+    return null;
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,17 +64,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  const token = await getRedditToken();
+  
+  if (!token) {
+    res.status(500).json({ 
+      error: 'Reddit API authentication failed. Please set REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET environment variables.' 
+    });
+    return;
+  }
+
   try {
-    // Ensure path ends with .json
     let redditPath = path;
     if (!redditPath.endsWith('.json')) {
       redditPath = `${redditPath}.json`;
     }
     
-    const redditUrl = `https://www.reddit.com${redditPath}`;
+    const redditUrl = `https://oauth.reddit.com${redditPath}`;
     const url = new URL(redditUrl);
     
-    // Copy query params from request
     Object.entries(req.query).forEach(([key, value]) => {
       if (key !== 'path' && value !== undefined) {
         url.searchParams.set(key, String(value));
@@ -37,17 +90,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const response = await fetch(url.toString(), {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Referer': 'https://www.reddit.com/',
-        'Origin': 'https://www.reddit.com',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        'Cache-Control': 'no-cache',
-        'Cookie': 'session_tracker=1; __cf_bm=1; edgebucket=1',
+        'Authorization': `Bearer ${token}`,
+        'User-Agent': 'RedditAudioApp/1.0',
+        'Accept': 'application/json',
       },
     });
 

@@ -42,7 +42,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Accept-Language': 'en-US,en;q=0.9',
         'Accept-Encoding': 'gzip, deflate, br',
         'Referer': 'https://www.reddit.com/',
-        'Connection': 'keep-alive',
+        'Origin': 'https://www.reddit.com',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'Cache-Control': 'no-cache',
+        'Cookie': 'session_tracker=1; __cf_bm=1; edgebucket=1',
       },
     });
 

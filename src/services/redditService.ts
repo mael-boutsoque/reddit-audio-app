@@ -8,7 +8,7 @@ interface RedditComment {
   replies: RedditComment[];
 }
 
-const REDDIT_BASE_URL = '/api';
+const REDDIT_BASE_URL = 'https://api.allorigins.win/raw?url=https://www.reddit.com';
 
 const cleanText = (text: string): string => {
   return text

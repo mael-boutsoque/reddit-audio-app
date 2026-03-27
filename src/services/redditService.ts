@@ -1,6 +1,13 @@
 import type { RedditPost, Story, Category, TimeFilter } from '../types';
 // import { translationService } from './translationService';
 
+interface RedditComment {
+  author: string;
+  body: string;
+  score: number;
+  replies: RedditComment[];
+}
+
 const REDDIT_BASE_URL = '/api';
 
 const cleanText = (text: string): string => {
@@ -14,7 +21,7 @@ const cleanText = (text: string): string => {
 };
 
 export class RedditService {
-  private async fetchJson(url: string, retries: number = 3): Promise<any> {
+  private async fetchJson(url: string, retries: number = 3): Promise<unknown> {
     console.log('Fetching:', url);
     
     for (let i = 0; i < retries; i++) {
@@ -49,10 +56,10 @@ export class RedditService {
   ): Promise<RedditPost[]> {
     const url = `${REDDIT_BASE_URL}/r/${subreddit}/${category}.json?limit=${limit}&t=${timeFilter}&raw_json=1`;
     
-    const data = await this.fetchJson(url);
+    const data = await this.fetchJson(url) as { data?: { children?: { data: RedditPost }[] } };
     const posts = data.data?.children || [];
     
-    return posts.map((post: any) => ({
+    return posts.map((post: { data: RedditPost }) => ({
       title: post.data.title,
       author: post.data.author,
       permalink: post.data.permalink,
@@ -63,7 +70,7 @@ export class RedditService {
     }));
   }
 
-  async fetchPostDetails(permalink: string): Promise<{ title: string; body: string; comments: any[] } | null> {
+  async fetchPostDetails(permalink: string): Promise<{ title: string; body: string; comments: RedditComment[] } | null> {
     const url = `${REDDIT_BASE_URL}${permalink}.json`;
     
     const data = await this.fetchJson(url);
@@ -87,17 +94,17 @@ export class RedditService {
     };
   }
 
-  private extractComments(comments: any[]): any[] {
-    const extracted: any[] = [];
+  private extractComments(comments: unknown[]): RedditComment[] {
+    const extracted: RedditComment[] = [];
     
     for (const comment of comments) {
-      if (comment.kind === 't1') {
-        const commentData = comment.data || {};
-        const extractedComment = {
+      if (comment && typeof comment === 'object' && 'kind' in comment && comment.kind === 't1') {
+        const commentData = (comment as { data?: { author?: string; body?: string; score?: number; replies?: { data?: { children?: unknown[] } } } }).data || {};
+        const extractedComment: RedditComment = {
           author: commentData.author || '',
           body: commentData.body || '',
           score: commentData.score || 0,
-          replies: [] as any[],
+          replies: [] as RedditComment[],
         };
         
         if (commentData.replies && typeof commentData.replies === 'object') {
@@ -118,7 +125,7 @@ export class RedditService {
     limit: number = 5,
     category: Category = 'hot',
     timeFilter: TimeFilter = 'all',
-    translate: boolean = true
+    _translate: boolean = true
   ): Promise<Story[]> {
     console.log('fetchStories called with:', subreddit, limit);
     const posts = await this.fetchSubredditPosts(subreddit, limit * 3, category, timeFilter);

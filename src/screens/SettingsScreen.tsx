@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Settings } from '../types';
 import { VOICES, SUBREDDITS, COLORS, DEFAULT_SETTINGS } from '../constants';
 
@@ -14,7 +14,6 @@ export function SettingsScreen({
   onBack,
 }: SettingsScreenProps) {
   const [localSettings, setLocalSettings] = useState<Settings>(settings ?? DEFAULT_SETTINGS);
-
 
   const handleSave = () => {
     onSaveSettings(localSettings);

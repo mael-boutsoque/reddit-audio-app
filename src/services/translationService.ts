@@ -33,7 +33,7 @@ export class TranslationService {
 
       if (data && Array.isArray(data[0])) {
         // Extract translated text from response
-        const translatedParts = data[0].map((item: any[]) => item[0]);
+        const translatedParts = data[0].map((item: unknown[]) => (item as string[])[0]);
         return translatedParts.join('');
       }
 

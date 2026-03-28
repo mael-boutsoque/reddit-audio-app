@@ -112,6 +112,12 @@ export function HomeScreen({
             </button>
           ))}
           <div ref={sentinelRef} style={styles.sentinel} />
+          
+          {!loading && stories.length > 0 && (
+            <button style={styles.loadMoreButton} onClick={onLoadMore}>
+              Charger plus d'histoires
+            </button>
+          )}
         </div>
 
         {loading && stories.length > 0 && (
@@ -236,5 +242,18 @@ const styles: Record<string, React.CSSProperties> = {
   sentinel: {
     height: '20px',
     margin: '20px 0',
+  },
+  loadMoreButton: {
+    backgroundColor: COLORS.surface,
+    color: COLORS.textPrimary,
+    border: `2px solid ${COLORS.primary}`,
+    padding: '16px 32px',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    width: '100%',
+    marginTop: '20px',
+    transition: 'background-color 0.2s, transform 0.1s',
   },
 };

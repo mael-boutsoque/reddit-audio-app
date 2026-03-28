@@ -1,10 +1,16 @@
 export const VOICES = [
-  { id: 'fr-FR-VivienneMultilingualNeural', name: 'Vivienne (FR)', language: 'fr-FR' },
-  { id: 'fr-FR-RemyMultilingualNeural', name: 'Remy (FR)', language: 'fr-FR' },
-  { id: 'fr-FR-DeniseNeural', name: 'Denise (FR)', language: 'fr-FR' },
-  { id: 'fr-FR-HenriNeural', name: 'Henri (FR)', language: 'fr-FR' },
-  { id: 'en-US-AvaNeural', name: 'Ava (EN)', language: 'en-US' },
-  { id: 'en-US-AndrewNeural', name: 'Andrew (EN)', language: 'en-US' },
+  // Browser voices
+  { id: 'fr-FR-VivienneMultilingualNeural', name: 'Vivienne (Browser FR)', language: 'fr-FR', provider: 'browser' },
+  { id: 'fr-FR-RemyMultilingualNeural', name: 'Remy (Browser FR)', language: 'fr-FR', provider: 'browser' },
+  { id: 'fr-FR-DeniseNeural', name: 'Denise (Browser FR)', language: 'fr-FR', provider: 'browser' },
+  { id: 'fr-FR-HenriNeural', name: 'Henri (Browser FR)', language: 'fr-FR', provider: 'browser' },
+  { id: 'en-US-AvaNeural', name: 'Ava (Browser EN)', language: 'en-US', provider: 'browser' },
+  { id: 'en-US-AndrewNeural', name: 'Andrew (Browser EN)', language: 'en-US', provider: 'browser' },
+  // ElevenLabs voices
+  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi (ElevenLabs FR)', language: 'fr-FR', provider: 'elevenlabs' },
+  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni (ElevenLabs FR)', language: 'fr-FR', provider: 'elevenlabs' },
+  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel (ElevenLabs EN)', language: 'en-US', provider: 'elevenlabs' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella (ElevenLabs EN)', language: 'en-US', provider: 'elevenlabs' },
 ];
 
 export const SUBREDDITS = [
@@ -19,13 +25,14 @@ export const SUBREDDITS = [
 ];
 
 export const DEFAULT_SETTINGS = {
-  voice: VOICES[0].id,
+  voice: 'AZnzlk1XvdvUeBnXmlld', // Default to ElevenLabs French voice
   volume: 0,
   vitesse: -10,
   auto_next: true,
   subreddit: SUBREDDITS[0],
   translate: true,
   storiesPerLoad: 5,
+  ttsProvider: 'elevenlabs' as const,
 };
 
 export const COLORS = {

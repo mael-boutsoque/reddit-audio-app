@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import type { Story, Settings } from '../types';
 import { ttsService } from '../services/ttsService';
+import { elevenLabsTTSService } from '../services/elevenLabsTTS';
 import { COLORS } from '../constants';
 
 interface PlayerScreenProps {
@@ -18,51 +19,81 @@ export function PlayerScreen({
 }: PlayerScreenProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [ttsError, setTtsError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
       ttsService.stop();
+      elevenLabsTTSService.stop();
     };
   }, []);
+
+  const getTTSService = (provider: string) => {
+    return provider === 'elevenlabs' ? elevenLabsTTSService : ttsService;
+  };
 
   const startSpeaking = async () => {
     if (!story || !settings) return;
 
     setIsGenerating(true);
+    setTtsError(null);
 
     const timeoutId = setTimeout(() => {
       console.warn('TTS timeout - arrêt forcé');
-      ttsService.stop();
+      getTTSService(settings.ttsProvider).stop();
       setIsGenerating(false);
       setIsSpeaking(false);
-    }, 10000);
+    }, settings.ttsProvider === 'elevenlabs' ? 30000 : 10000);
 
     try {
       const text = `${story.title}.\n\n${story.body}`;
-      const rate = ttsService.convertSpeedToRate(settings.vitesse);
-      const pitch = ttsService.convertVolumeToPitch(settings.volume);
+      const service = getTTSService(settings.ttsProvider);
+      const rate = service.convertSpeedToRate(settings.vitesse);
 
-      await ttsService.speak(text, {
-        language: settings.voice.startsWith('fr') ? 'fr-FR' : 'en-US',
-        rate,
-        pitch,
-        onDone: () => {
-          clearTimeout(timeoutId);
-          if (isMountedRef.current) {
-            setIsSpeaking(false);
-          }
-        },
-        onError: (error) => {
-          clearTimeout(timeoutId);
-          console.error('TTS Error:', error);
-          if (isMountedRef.current) {
-            setIsSpeaking(false);
-            setIsGenerating(false);
-          }
-        },
-      });
+      if (settings.ttsProvider === 'elevenlabs') {
+        await elevenLabsTTSService.speak(text, {
+          voice: settings.voice,
+          rate,
+          onDone: () => {
+            clearTimeout(timeoutId);
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+            }
+          },
+          onError: (error) => {
+            clearTimeout(timeoutId);
+            console.error('ElevenLabs TTS Error:', error);
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+              setIsGenerating(false);
+              setTtsError('Erreur ElevenLabs: ' + error.message);
+            }
+          },
+        });
+      } else {
+        const pitch = ttsService.convertVolumeToPitch(settings.volume);
+        await ttsService.speak(text, {
+          language: settings.voice.startsWith('fr') ? 'fr-FR' : 'en-US',
+          rate,
+          pitch,
+          onDone: () => {
+            clearTimeout(timeoutId);
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+            }
+          },
+          onError: (error) => {
+            clearTimeout(timeoutId);
+            console.error('Browser TTS Error:', error);
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+              setIsGenerating(false);
+            }
+          },
+        });
+      }
 
       clearTimeout(timeoutId);
       if (isMountedRef.current) {
@@ -74,23 +105,28 @@ export function PlayerScreen({
       console.error('Error starting TTS:', error);
       if (isMountedRef.current) {
         setIsGenerating(false);
+        setTtsError(error instanceof Error ? error.message : 'Erreur TTS');
       }
     }
   };
 
   const stopSpeaking = async () => {
     await ttsService.stop();
+    await elevenLabsTTSService.stop();
     setIsSpeaking(false);
   };
 
   const cancelSpeaking = async () => {
     await ttsService.stop();
+    await elevenLabsTTSService.stop();
     setIsGenerating(false);
     setIsSpeaking(false);
   };
 
   const toggleSpeaking = async () => {
-    const actuallySpeaking = ttsService.isCurrentlySpeaking() || isSpeaking;
+    const actuallySpeaking = ttsService.isCurrentlySpeaking() || 
+                            elevenLabsTTSService.isCurrentlySpeaking() || 
+                            isSpeaking;
     
     if (actuallySpeaking) {
       await stopSpeaking();
@@ -131,6 +167,12 @@ export function PlayerScreen({
       </div>
 
       <div style={styles.controls}>
+        {ttsError && (
+          <div style={styles.errorContainer}>
+            <span style={styles.errorText}>{ttsError}</span>
+            <button style={styles.errorDismiss} onClick={() => setTtsError(null)}>✕</button>
+          </div>
+        )}
         {isGenerating ? (
           <div style={styles.generatingContainer}>
             <div style={styles.spinner} />
@@ -270,5 +312,27 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '20px',
     fontSize: '14px',
     cursor: 'pointer',
+  },
+  errorContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.accent,
+    padding: '12px 16px',
+    borderRadius: '8px',
+    marginBottom: '12px',
+  },
+  errorText: {
+    color: COLORS.textPrimary,
+    fontSize: '14px',
+    flex: 1,
+  },
+  errorDismiss: {
+    background: 'none',
+    border: 'none',
+    color: COLORS.textPrimary,
+    fontSize: '16px',
+    cursor: 'pointer',
+    padding: '0 8px',
   },
 };

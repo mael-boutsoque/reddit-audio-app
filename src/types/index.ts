@@ -14,6 +14,8 @@ export interface RedditPost {
   selftext?: string;
 }
 
+export type TTSProvider = 'browser' | 'elevenlabs';
+
 export interface Settings {
   voice: string;
   volume: number;
@@ -22,6 +24,7 @@ export interface Settings {
   subreddit: string;
   translate: boolean;
   storiesPerLoad: number;
+  ttsProvider: TTSProvider;
 }
 
 export type Category = 'hot' | 'top' | 'new' | 'rising';

@@ -52,8 +52,39 @@ export function SettingsScreen({
         </div>
 
         <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>PROVIDER TTS</h2>
+          <button
+            style={{
+              ...styles.optionButton,
+              ...(localSettings.ttsProvider === 'browser' ? styles.optionButtonActive : {}),
+            }}
+            onClick={() => {
+              updateSetting('ttsProvider', 'browser');
+              updateSetting('voice', VOICES.find(v => v.provider === 'browser')?.id || VOICES[0].id);
+            }}
+          >
+            🖥️ Navigateur (Gratuit - Qualité basique)
+          </button>
+          <button
+            style={{
+              ...styles.optionButton,
+              ...(localSettings.ttsProvider === 'elevenlabs' ? styles.optionButtonActive : {}),
+            }}
+            onClick={() => {
+              updateSetting('ttsProvider', 'elevenlabs');
+              updateSetting('voice', VOICES.find(v => v.provider === 'elevenlabs')?.id || VOICES[6].id);
+            }}
+          >
+            🎙️ ElevenLabs (Gratuit 10k caractères/mois - Qualité humaine)
+          </button>
+          <p style={styles.hint}>
+            ElevenLabs offre une qualité vocale bien plus naturelle et humaine. Nécessite une clé API gratuite.
+          </p>
+        </div>
+
+        <div style={styles.section}>
           <h2 style={styles.sectionTitle}>SÉLECTION DE LA VOIX</h2>
-          {VOICES.map((voice) => (
+          {VOICES.filter(v => v.provider === localSettings.ttsProvider).map((voice) => (
             <button
               key={voice.id}
               style={{

@@ -100,7 +100,7 @@ Je commence à regretter d'avoir acheté cet appartement et envisage sérieuseme
   },
 ];
 
-const REDDIT_BASE_URL = 'https://corsproxy.io/?https://www.reddit.com';
+const REDDIT_BASE_URL = '/api/reddit?path=';
 
 const cleanText = (text: string): string => {
   return text
@@ -147,10 +147,17 @@ export class RedditService {
     timeFilter: TimeFilter = 'all',
     after?: string
   ): Promise<{ posts: RedditPost[]; after: string | null }> {
-    let url = `${REDDIT_BASE_URL}/r/${subreddit}/${category}.json?limit=${limit}&t=${timeFilter}&raw_json=1`;
+    const path = `/r/${subreddit}/${category}.json`;
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      t: timeFilter,
+      raw_json: '1',
+    });
     if (after) {
-      url += `&after=${after}`;
+      params.set('after', after);
     }
+    
+    const url = `${REDDIT_BASE_URL}${path}&${params.toString()}`;
     
     const data = await this.fetchJson(url) as { data?: { children?: { data: RedditPost }[]; after?: string | null } };
     const posts = data.data?.children || [];

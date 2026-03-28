@@ -14,7 +14,7 @@ export interface RedditPost {
   selftext?: string;
 }
 
-export type TTSProvider = 'browser' | 'elevenlabs';
+export type TTSProvider = 'browser' | 'elevenlabs' | 'google';
 
 export interface Settings {
   voice: string;

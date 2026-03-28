@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import type { Story, Settings } from '../types';
 import { ttsService } from '../services/ttsService';
 import { elevenLabsTTSService } from '../services/elevenLabsTTS';
+import { googleTTSService } from '../services/googleTTS';
 import { COLORS } from '../constants';
 
 interface PlayerScreenProps {
@@ -27,11 +28,14 @@ export function PlayerScreen({
       isMountedRef.current = false;
       ttsService.stop();
       elevenLabsTTSService.stop();
+      googleTTSService.stop();
     };
   }, []);
 
   const getTTSService = (provider: string) => {
-    return provider === 'elevenlabs' ? elevenLabsTTSService : ttsService;
+    if (provider === 'elevenlabs') return elevenLabsTTSService;
+    if (provider === 'google') return googleTTSService;
+    return ttsService;
   };
 
   const startSpeaking = async () => {
@@ -45,7 +49,7 @@ export function PlayerScreen({
       getTTSService(settings.ttsProvider).stop();
       setIsGenerating(false);
       setIsSpeaking(false);
-    }, settings.ttsProvider === 'elevenlabs' ? 30000 : 10000);
+    }, settings.ttsProvider === 'elevenlabs' || settings.ttsProvider === 'google' ? 30000 : 10000);
 
     try {
       const text = `${story.title}.\n\n${story.body}`;
@@ -69,6 +73,26 @@ export function PlayerScreen({
               setIsSpeaking(false);
               setIsGenerating(false);
               setTtsError('Erreur ElevenLabs: ' + error.message);
+            }
+          },
+        });
+      } else if (settings.ttsProvider === 'google') {
+        await googleTTSService.speak(text, {
+          voice: settings.voice,
+          rate,
+          onDone: () => {
+            clearTimeout(timeoutId);
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+            }
+          },
+          onError: (error) => {
+            clearTimeout(timeoutId);
+            console.error('Google TTS Error:', error);
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+              setIsGenerating(false);
+              setTtsError('Erreur Google: ' + error.message);
             }
           },
         });
@@ -113,12 +137,14 @@ export function PlayerScreen({
   const stopSpeaking = async () => {
     await ttsService.stop();
     await elevenLabsTTSService.stop();
+    await googleTTSService.stop();
     setIsSpeaking(false);
   };
 
   const cancelSpeaking = async () => {
     await ttsService.stop();
     await elevenLabsTTSService.stop();
+    await googleTTSService.stop();
     setIsGenerating(false);
     setIsSpeaking(false);
   };
@@ -126,6 +152,7 @@ export function PlayerScreen({
   const toggleSpeaking = async () => {
     const actuallySpeaking = ttsService.isCurrentlySpeaking() || 
                             elevenLabsTTSService.isCurrentlySpeaking() || 
+                            googleTTSService.isCurrentlySpeaking() ||
                             isSpeaking;
     
     if (actuallySpeaking) {

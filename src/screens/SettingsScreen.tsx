@@ -77,6 +77,18 @@ export function SettingsScreen({
           >
             🎙️ ElevenLabs (Gratuit 10k caractères/mois - Qualité humaine)
           </button>
+          <button
+            style={{
+              ...styles.optionButton,
+              ...(localSettings.ttsProvider === 'google' ? styles.optionButtonActive : {}),
+            }}
+            onClick={() => {
+              updateSetting('ttsProvider', 'google');
+              updateSetting('voice', VOICES.find(v => v.provider === 'google')?.id || VOICES[10].id);
+            }}
+          >
+            🔊 Google Cloud (Gratuit 1M caractères/mois - Qualité moyenne)
+          </button>
           <p style={styles.hint}>
             ElevenLabs offre une qualité vocale bien plus naturelle et humaine. Nécessite une clé API gratuite.
           </p>

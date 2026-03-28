@@ -32,7 +32,7 @@ export function useStories() {
       }
       
       setAfterCursor(result.after);
-      setHasMore(result.stories.length >= limit && result.after !== null);
+      setHasMore(result.after !== null);
     } catch (err) {
       console.error('Error loading stories:', err);
       setError(err instanceof Error ? err.message : 'Failed to load stories');

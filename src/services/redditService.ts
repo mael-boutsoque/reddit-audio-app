@@ -144,22 +144,30 @@ export class RedditService {
     subreddit: string,
     limit: number = 10,
     category: Category = 'hot',
-    timeFilter: TimeFilter = 'all'
-  ): Promise<RedditPost[]> {
-    const url = `${REDDIT_BASE_URL}/r/${subreddit}/${category}.json?limit=${limit}&t=${timeFilter}&raw_json=1`;
+    timeFilter: TimeFilter = 'all',
+    after?: string
+  ): Promise<{ posts: RedditPost[]; after: string | null }> {
+    let url = `${REDDIT_BASE_URL}/r/${subreddit}/${category}.json?limit=${limit}&t=${timeFilter}&raw_json=1`;
+    if (after) {
+      url += `&after=${after}`;
+    }
     
-    const data = await this.fetchJson(url) as { data?: { children?: { data: RedditPost }[] } };
+    const data = await this.fetchJson(url) as { data?: { children?: { data: RedditPost }[]; after?: string | null } };
     const posts = data.data?.children || [];
+    const nextAfter = data.data?.after || null;
     
-    return posts.map((post: { data: RedditPost }) => ({
-      title: post.data.title,
-      author: post.data.author,
-      permalink: post.data.permalink,
-      score: post.data.score,
-      num_comments: post.data.num_comments,
-      created_utc: post.data.created_utc,
-      selftext: post.data.selftext || '',
-    }));
+    return {
+      posts: posts.map((post: { data: RedditPost }) => ({
+        title: post.data.title,
+        author: post.data.author,
+        permalink: post.data.permalink,
+        score: post.data.score,
+        num_comments: post.data.num_comments,
+        created_utc: post.data.created_utc,
+        selftext: post.data.selftext || '',
+      })),
+      after: nextAfter,
+    };
   }
 
   async fetchPostDetails(permalink: string): Promise<{ title: string; body: string; comments: RedditComment[] } | null> {
@@ -216,12 +224,13 @@ export class RedditService {
     subreddit: string,
     limit: number = 5,
     category: Category = 'hot',
-    timeFilter: TimeFilter = 'all'
-  ): Promise<Story[]> {
-    console.log('fetchStories called with:', subreddit, limit);
+    timeFilter: TimeFilter = 'all',
+    after?: string
+  ): Promise<{ stories: Story[]; after: string | null }> {
+    console.log('fetchStories called with:', subreddit, limit, after);
     
     try {
-      const posts = await this.fetchSubredditPosts(subreddit, limit * 3, category, timeFilter);
+      const { posts, after: nextAfter } = await this.fetchSubredditPosts(subreddit, limit * 3, category, timeFilter, after);
       console.log('Got posts:', posts.length);
       const stories: Story[] = [];
       
@@ -247,14 +256,14 @@ export class RedditService {
       // Return mock stories if no real stories found
       if (stories.length === 0) {
         console.log('No stories from Reddit, using mock data');
-        return MOCK_STORIES.slice(0, limit);
+        return { stories: MOCK_STORIES.slice(0, limit), after: null };
       }
       
-      return stories;
+      return { stories, after: nextAfter };
     } catch (error) {
       console.error('Error fetching from Reddit:', error);
       console.log('Using mock stories as fallback');
-      return MOCK_STORIES.slice(0, limit);
+      return { stories: MOCK_STORIES.slice(0, limit), after: null };
     }
   }
 }

@@ -149,6 +149,7 @@ export class RedditService {
   ): Promise<{ posts: RedditPost[]; after: string | null }> {
     const path = `/r/${subreddit}/${category}.json`;
     const params = new URLSearchParams({
+      path: path,
       limit: limit.toString(),
       t: timeFilter,
       raw_json: '1',
@@ -157,7 +158,7 @@ export class RedditService {
       params.set('after', after);
     }
     
-    const url = `${REDDIT_BASE_URL}${path}&${params.toString()}`;
+    const url = `${REDDIT_BASE_URL}?${params.toString()}`;
     
     const data = await this.fetchJson(url) as { data?: { children?: { data: RedditPost }[]; after?: string | null } };
     const posts = data.data?.children || [];
@@ -178,7 +179,10 @@ export class RedditService {
   }
 
   async fetchPostDetails(permalink: string): Promise<{ title: string; body: string; comments: RedditComment[] } | null> {
-    const url = `${REDDIT_BASE_URL}${permalink}.json`;
+    const params = new URLSearchParams({
+      path: permalink,
+    });
+    const url = `${REDDIT_BASE_URL}?${params.toString()}`;
     
     const data = await this.fetchJson(url);
     

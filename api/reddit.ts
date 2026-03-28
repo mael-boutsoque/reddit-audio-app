@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redditPath = `${redditPath}.json`;
     }
     
-    const redditUrl = `https://old.reddit.com${redditPath}`;
+    const redditUrl = `https://www.reddit.com${redditPath}`;
     const url = new URL(redditUrl);
     
     Object.entries(req.query).forEach(([key, value]) => {
@@ -48,16 +48,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const response = await fetch(url.toString(), {
       headers: {
         'User-Agent': userAgent,
-        'Accept': 'application/json, text/html, */*',
+        'Accept': 'application/json',
         'Accept-Language': 'en-US,en;q=0.9',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Cache-Control': 'max-age=0',
+        'Referer': 'https://www.google.com/',
+        'Origin': 'https://www.google.com',
       },
     });
 
